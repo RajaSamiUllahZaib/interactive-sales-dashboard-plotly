@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>📊 Sales Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #004080, #3399ff);
+      color: white;
+      text-align: center;
+      padding: 10px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input[type="file"] {
+      padding: 8px;
+      background: white;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .chart-container {
+      background: white;
+      border-radius: 10px;
+      margin: 20px auto;
+      padding: 15px;
+      color: black;
+      max-width: 1200px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📊 Sales Dashboard</h1>
+<input type="file" id="fileInput" accept=".json">
+
+<div class="chart-container" id="barChart"></div>
+<div class="chart-container" id="lineChart"></div>
+<div class="chart-container" id="scatterChart"></div>
+<div class="chart-container" id="pieChart"></div>
+<div class="chart-container" id="bubbleChart"></div>
+
+<script>
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = JSON.parse(event.target.result);
+        renderDashboard(data);
+    };
+    reader.readAsText(file);
+});
+
+function renderDashboard(data) {
+    // Bar Chart - Total Sales by Country
+    const countrySales = {};
+    data.forEach(d => {
+        countrySales[d.Country] = (countrySales[d.Country] || 0) + d.TotalPrice;
+    });
+    const countries = Object.keys(countrySales);
+    const sales = Object.values(countrySales);
+
+    Plotly.newPlot('barChart', [{
+        x: countries,
+        y: sales,
+        type: 'bar',
+        marker: { color: 'skyblue' }
+    }], { title: 'Total Sales by Country' });
+
+    // Line Chart - Total Sales by Order Date
+    const dateSales = {};
+    data.forEach(d => {
+        dateSales[d.OrderDate] = (dateSales[d.OrderDate] || 0) + d.TotalPrice;
+    });
+    const sortedDates = Object.keys(dateSales).sort((a, b) => new Date(a) - new Date(b));
+
+    Plotly.newPlot('lineChart', [{
+        x: sortedDates,
+        y: sortedDates.map(d => dateSales[d]),
+        type: 'scatter',
+        mode: 'lines+markers',
+        marker: { color: 'orange' }
+    }], { title: 'Sales Over Time' });
+
+    // Scatter Chart - Quantity vs Total Price
+    Plotly.newPlot('scatterChart', [{
+        x: data.map(d => d.Quantity),
+        y: data.map(d => d.TotalPrice),
+        text: data.map(d => d.Product),
+        mode: 'markers',
+        marker: { size: 10, color: 'green' }
+    }], { title: 'Quantity vs Total Price' });
+
+    // Pie Chart - Sales Share by Category
+    const categorySales = {};
+    data.forEach(d => {
+        categorySales[d.Category] = (categorySales[d.Category] || 0) + d.TotalPrice;
+    });
+    Plotly.newPlot('pieChart', [{
+        labels: Object.keys(categorySales),
+        values: Object.values(categorySales),
+        type: 'pie'
+    }], { title: 'Sales Share by Category' });
+
+    // Bubble Chart - Age vs Total Price
+    Plotly.newPlot('bubbleChart', [{
+        x: data.map(d => d.Age),
+        y: data.map(d => d.TotalPrice),
+        text: data.map(d => d.CustomerName),
+        mode: 'markers',
+        marker: {
+            size: data.map(d => d.Quantity * 5),
+            color: data.map(d => d.TotalPrice),
+            colorscale: 'Viridis',
+            showscale: true
+        }
+    }], { title: 'Customer Age vs Sales (Bubble Size = Quantity)' });
+}
+</script>
+
+</body>
+</html>
