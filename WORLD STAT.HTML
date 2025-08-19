@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Population Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(-45deg, #1e3c72, #2a5298, #1e3c72, #2a5298);
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      color: white;
+      text-align: center;
+    }
+    @keyframes gradientBG {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    h1 { margin-top: 20px; }
+    #charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+    .chart { background: white; border-radius: 15px; padding: 15px; color: black; }
+    input { margin: 20px; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🌍 Population Dashboard</h1>
+  <input type="file" id="fileInput" accept=".json">
+
+  <div id="charts">
+    <div id="barChart" class="chart"></div>
+    <div id="lineChart" class="chart"></div>
+    <div id="pieChart" class="chart"></div>
+    <div id="bubbleChart" class="chart"></div>
+  </div>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = JSON.parse(e.target.result);
+
+        const countries = data.map(d => d.Country);
+        const pop2020 = data.map(d => d["Population_2020 (millions)"]);
+        const pop2025 = data.map(d => d["Population_2025 (millions)"]);
+        const growth = data.map(d => d["Growth (%)"]);
+
+        // Bar Chart
+        Plotly.newPlot('barChart', [
+          { x: countries, y: pop2020, type: 'bar', name: '2020' },
+          { x: countries, y: pop2025, type: 'bar', name: '2025' }
+        ], { title: 'Population Comparison (2020 vs 2025)' });
+
+        // Line Chart
+        Plotly.newPlot('lineChart', [
+          { x: countries, y: growth, type: 'scatter', mode: 'lines+markers', name: 'Growth %' }
+        ], { title: 'Growth Rate (%)' });
+
+        // Pie Chart
+        Plotly.newPlot('pieChart', [{
+          labels: countries,
+          values: pop2025,
+          type: 'pie'
+        }], { title: 'Population Share (2025)' });
+
+        // Bubble Chart
+        Plotly.newPlot('bubbleChart', [{
+          x: countries,
+          y: pop2025,
+          text: countries,
+          mode: 'markers',
+          marker: { size: growth.map(g => g * 15), color: growth, colorscale: 'Viridis' }
+        }], { title: 'Bubble Chart (Growth vs Population 2025)' });
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
